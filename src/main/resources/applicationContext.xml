@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <description>spring公共的配置</description>
+    <!--<context:annotation-config/>-->
+
+    <!--开启注解扫描，使得自动注册bean，保证@Required、@Autowired的属性被注入-->
+    <context:component-scan base-package="com.patentshow">
+        <!--这里在spring的配置文件中，不扫描controller层，controller层将在spring-mvc.xml进行扫描-->
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+
+
+
+    <!--********************************************配置hibernate********************************************-->
+
+    <!--加载properties配置文件-->
+    <context:property-placeholder location="classpath:hibernate.properties"></context:property-placeholder>
+
+    <!--配置数据源-->
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close"> <!-- 设置为close，使得spring容器关闭之后，数据源能够被正常关闭，避免连接泄漏-->
+        <!--基本配置-->
+        <property name="driverClassName" value="${jdbc.driver1}"/>
+        <property name="url" value="${jdbc.url1}"/>
+        <property name="username" value="${jdbc.user1}"/>
+        <property name="password" value="${jdbc.password1}"/>
+
+        <!--<property name="defaultReadOnly" value="false"/>-->
+        <!--关键配置-->
+        <property name="initialSize" value="5"/>
+        <property name="maxIdle" value="20"/>
+        <property name="maxActive" value="20"/>
+        <property name="minIdle" value="2"/>
+        <property name="maxWait" value="1000"/>
+
+        <!-- 连接Idle一个小时后超时 -->
+        <property name="timeBetweenEvictionRunsMillis" value="3600000"/>
+        <property name="minEvictableIdleTimeMillis" value="3600000"/>
+    </bean>
+
+
+
+
+
+    <!--配置session工厂-->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="packagesToScan" value="com.patentshow.entity"/>
+        <property name="hibernateProperties">
+            <props>
+                <!--hibernate根据实体自动生成数据库表-->
+                <!--<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>-->
+                <!--指定数据库方言-->
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <!--在控制台显示执行的数据库操作语句-->
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <!--在控制台显示执行的数据库操作语句（格式）-->
+                <prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+
+                <prop key="hibernate.autoReconnect">true</prop>
+
+
+                 <prop key="hibernate.cache.use_query_cache">true</prop>
+
+                <prop key="hibernate.cache.use_second_level_cache">true</prop>
+
+                <prop key="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory</prop>
+                <!--<prop key="hibernate.connection.url">jdbc:mysql://10.82.81.130:3306/shop</prop>-->
+                <!--<prop key="hibernate.connection.driver_class">com.mysql.jdbc.Driver</prop>-->
+            </props>
+        </property>
+    </bean>
+
+
+    <!-- 事务配置-->
+    <bean id="transactionManager"
+          class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory">
+        </property>
+    </bean>
+
+
+    <!-- 开启事务注解 -->
+    <tx:annotation-driven transaction-manager="transactionManager"  />
+
+    <!--&lt;!&ndash;开启aop自动代理&ndash;&gt;-->
+    <!--<aop:aspectj-autoproxy/>-->
+</beans>
